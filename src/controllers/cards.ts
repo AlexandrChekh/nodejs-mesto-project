@@ -25,7 +25,7 @@ export const createCard = (
   const id = req.user?._id;
 
   return Card.create({ name, link, owner: id })
-    .then((card) => res.send({ data: card }))
+    .then((card) => res.status(201).send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return next(new BadRequestError(INVALID_CARD_CREATE_DATA_MESSAGE));
