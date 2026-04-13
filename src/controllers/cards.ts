@@ -1,11 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
 
 import BadRequestError from '../errors/bad-request-error';
+import ForbiddenError from '../errors/forbidden-error';
 import NotFoundError from '../errors/not-found-error';
 import Card from '../models/card';
 import { SessionRequest } from '../types/request';
 import {
   CARD_NOT_FOUND_MESSAGE,
+  FORBIDDEN_CARD_DELETE_MESSAGE,
   INVALID_CARD_CREATE_DATA_MESSAGE,
   INVALID_CARD_LIKE_DATA_MESSAGE
 } from '../utils/constants';
@@ -35,14 +37,26 @@ export const createCard = (
     });
 };
 
-export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
-  return Card.findByIdAndRemove(req.params.cardId)
+export const deleteCard = (
+  req: SessionRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const userId = req.user?._id;
+
+  return Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
         throw new NotFoundError(CARD_NOT_FOUND_MESSAGE);
       }
 
-      res.send({ data: card });
+      if (card.owner.toString() !== userId) {
+        throw new ForbiddenError(FORBIDDEN_CARD_DELETE_MESSAGE);
+      }
+
+      return card.deleteOne().then(() => {
+        res.send({ data: card });
+      });
     })
     .catch((err) => {
       if (err.name === 'CastError') {

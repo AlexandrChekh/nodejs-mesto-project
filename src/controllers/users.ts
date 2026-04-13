@@ -1,9 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import BadRequestError from '../errors/bad-request-error';
 import NotFoundError from '../errors/not-found-error';
 import User from '../models/user';
 import { SessionRequest } from '../types/request';
+
 import {
   INVALID_USER_AVATAR_DATA_MESSAGE,
   INVALID_USER_CREATE_DATA_MESSAGE,
@@ -36,10 +39,32 @@ export const getUser = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const { name, about, avatar } = req.body;
+export const getCurrentUser = (
+  req: SessionRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  return User.findById(req.user?._id)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError(USER_NOT_FOUND_MESSAGE);
+      }
+      res.send({ data: user });
+    })
+    .catch(next);
+};
 
-  return User.create({ name, about, avatar })
+export const createUser = (req: Request, res: Response, next: NextFunction) => {
+  const {
+    name = 'Жак-Ив Кусто',
+    about = 'Исследователь',
+    avatar = 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    password
+  } = req.body;
+
+  return bcrypt
+    .hash(password, 10)
+    .then((hash) => User.create({ name, about, avatar, password: hash }))
     .then((user) => res.status(201).send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -106,4 +131,18 @@ export const updateUserAvatar = (
 
       return next(err);
     });
+};
+
+export const login = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      res.send({
+        token: jwt.sign({ _id: user._id }, 'super-strong-secret', {
+          expiresIn: '7d'
+        })
+      });
+    })
+    .catch(next);
 };

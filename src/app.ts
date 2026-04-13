@@ -1,10 +1,11 @@
-import express, { NextFunction, Response } from 'express';
+import express, { NextFunction } from 'express';
 import mongoose from 'mongoose';
-import errorHandler from './middlewares/error-handler';
-import usersRouter from './routes/users';
-import cardsRouter from './routes/cards';
+import { createUser, login } from './controllers/users';
 import NotFoundError from './errors/not-found-error';
-import { SessionRequest } from './types/request';
+import auth from './middlewares/auth';
+import errorHandler from './middlewares/error-handler';
+import cardsRouter from './routes/cards';
+import usersRouter from './routes/users';
 import { ROUTE_NOT_FOUND_MESSAGE } from './utils/constants';
 
 const { PORT = 3000, BASE_PATH } = process.env;
@@ -15,14 +16,9 @@ app.use(express.urlencoded({ extended: true }));
 
 mongoose.connect('mongodb://localhost:27017/mestodb');
 
-app.use((req: SessionRequest, res: Response, next: NextFunction) => {
-  req.user = {
-    _id: '69d795c8989735cae901a2b0'
-  };
-
-  next();
-});
-
+app.post('/signin', login);
+app.post('/signup', createUser);
+app.use(auth);
 app.use('/users', usersRouter);
 app.use('/cards', cardsRouter);
 
