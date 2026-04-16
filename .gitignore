@@ -15,6 +15,9 @@ node_modules
 .DS_Store
 .idea
 .vscode
+.env
+.env.*
+!.env.example
 
 # Typescript build
 dist

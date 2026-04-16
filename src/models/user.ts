@@ -2,9 +2,8 @@ import {
   Schema,
   model,
   Model,
-  Document
+  Document,
 } from 'mongoose';
-
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import {
@@ -30,19 +29,29 @@ interface UserModel extends Model<IUser> {
   ) => Promise<Document<unknown, any, IUser>>;
 }
 
+const sanitizeUser = (ret: Record<string, unknown>) => {
+  const user = { ...ret };
+  delete user.password;
+  return user;
+};
+
 const userSchema = new Schema<IUser, UserModel>({
   name: {
     type: String,
     minlength: 2,
-    maxlength: 30
+    maxlength: 30,
+    default: 'Жак-Ив Кусто'
   },
   about: {
     type: String,
     minlength: 2,
-    maxlength: 200
+    maxlength: 200,
+    default: 'Исследователь'
   },
   avatar: {
     type: String,
+    default:
+      'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     validate: {
       validator: (v: string) => !v || URL_REGEX.test(v),
       message: INVALID_URL_MESSAGE
@@ -62,6 +71,14 @@ const userSchema = new Schema<IUser, UserModel>({
     required: true,
     select: false
   }
+});
+
+userSchema.set('toJSON', {
+  transform: (_doc, ret) => sanitizeUser(ret)
+});
+
+userSchema.set('toObject', {
+  transform: (_doc, ret) => sanitizeUser(ret)
 });
 
 userSchema.statics.findUserByCredentials = function (email, password) {

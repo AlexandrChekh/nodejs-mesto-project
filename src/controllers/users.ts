@@ -7,6 +7,7 @@ import ConflictError from '../errors/conflict-error';
 import NotFoundError from '../errors/not-found-error';
 import User from '../models/user';
 import { SessionRequest } from '../types/request';
+import jwtSecret from '../utils/config';
 
 import {
   DUPLICATE_USER_EMAIL_MESSAGE,
@@ -58,11 +59,11 @@ export const getCurrentUser = (
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
   const {
-    name = 'Жак-Ив Кусто',
-    about = 'Исследователь',
-    avatar = 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    name,
+    about,
+    avatar,
     email,
-    password
+    password,
   } = req.body;
 
   return bcrypt
@@ -153,7 +154,7 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'super-strong-secret', {
+      const token = jwt.sign({ _id: user._id }, jwtSecret, {
         expiresIn: '7d'
       });
       res.send({ token });

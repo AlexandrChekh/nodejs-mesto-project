@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { errors } from 'celebrate';
@@ -13,6 +14,7 @@ import {
   validateSignupBody
 } from './middlewares/validators';
 import { ROUTE_NOT_FOUND_MESSAGE } from './utils/constants';
+import { mongoUrl } from './utils/config';
 import { requestLogger, errorLogger } from './middlewares/logger';
 
 const { PORT = 3000, BASE_PATH } = process.env;
@@ -21,7 +23,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-mongoose.connect('mongodb://localhost:27017/mestodb');
+mongoose.connect(mongoUrl);
 
 app.use(requestLogger);
 
