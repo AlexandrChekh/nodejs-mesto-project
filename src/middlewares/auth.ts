@@ -1,4 +1,4 @@
-import { NextFunction, Response } from 'express';
+import { RequestHandler } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import UnauthorizedError from '../errors/unauthorized-error';
 import { INVALID_EMAIL_OR_PASSWORD_MESSAGE } from '../utils/constants';
@@ -8,7 +8,7 @@ const extractBearerToken = (token: string) => {
   return token.replace('Bearer ', '');
 };
 
-export default (req: SessionRequest, res: Response, next: NextFunction) => {
+const auth: RequestHandler = (req: SessionRequest, _res, next) => {
   const { authorization } = req.headers;
 
   if (!authorization || !authorization.startsWith('Bearer ')) {
@@ -24,7 +24,8 @@ export default (req: SessionRequest, res: Response, next: NextFunction) => {
   } catch {
     throw new UnauthorizedError(INVALID_EMAIL_OR_PASSWORD_MESSAGE);
   }
-  console.log(payload);
   req.user = { _id: (payload as JwtPayload)._id };
   next();
 };
+
+export default auth;

@@ -1,7 +1,15 @@
-import { Schema, model, Model, Document } from 'mongoose';
+import {
+  Schema,
+  model,
+  Model,
+  Document
+} from 'mongoose';
+
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import {
+  URL_REGEX,
+  INVALID_URL_MESSAGE,
   INVALID_EMAIL_MESSAGE,
   INVALID_EMAIL_OR_PASSWORD_MESSAGE
 } from '../utils/constants';
@@ -34,7 +42,11 @@ const userSchema = new Schema<IUser, UserModel>({
     maxlength: 200
   },
   avatar: {
-    type: String
+    type: String,
+    validate: {
+      validator: (v: string) => !v || URL_REGEX.test(v),
+      message: INVALID_URL_MESSAGE
+    }
   },
   email: {
     type: String,
@@ -47,22 +59,25 @@ const userSchema = new Schema<IUser, UserModel>({
   },
   password: {
     type: String,
-    required: true
+    required: true,
+    select: false
   }
 });
 
 userSchema.statics.findUserByCredentials = function (email, password) {
-  return this.findOne({ email }).then((user) => {
-    if (!user) {
-      throw new UnauthorizedError(INVALID_EMAIL_OR_PASSWORD_MESSAGE);
-    }
-    return bcrypt.compare(password, user.password).then((matched) => {
-      if (!matched) {
+  return this.findOne({ email })
+    .select('+password')
+    .then((user) => {
+      if (!user) {
         throw new UnauthorizedError(INVALID_EMAIL_OR_PASSWORD_MESSAGE);
       }
-      return user;
+      return bcrypt.compare(password, user.password).then((matched) => {
+        if (!matched) {
+          throw new UnauthorizedError(INVALID_EMAIL_OR_PASSWORD_MESSAGE);
+        }
+        return user;
+      });
     });
-  });
 };
 
 export default model<IUser, UserModel>('user', userSchema);

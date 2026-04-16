@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import { URL_REGEX, INVALID_URL_MESSAGE } from '../utils/constants';
 
 export interface ICard {
   name: string;
@@ -17,7 +18,11 @@ const cardSchema = new Schema({
   },
   link: {
     type: String,
-    required: true
+    required: true,
+    validate: {
+      validator: (v: string) => !v || URL_REGEX.test(v),
+      message: INVALID_URL_MESSAGE
+    }
   },
   owner: {
     type: Schema.Types.ObjectId,
